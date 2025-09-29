@@ -73,24 +73,19 @@
 
 
     <!-- Firebase and App Logic -->
-    <script> type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, writeBatch, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = {
-    apiKey: "AIzaSyCwe6SLVFiq7Wx0IeWq9LDYMsczKnLem_Q",
-    authDomain: "uasf-curriculum-dev.firebaseapp.com",
-    projectId: "uasf-curriculum-dev",
-    storageBucket: "uasf-curriculum-dev.firebasestorage.app",
-    messagingSenderId: "816577874619",
-    appId: "1:816577874619:web:a7694c0747bd33655cf79e",
-    measurementId: "G-G1HWDYZHJ8"
-  };
-         // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
         let app, auth, db, userId, courseDataUnsubscribe;
         let localCourseData = [];
@@ -486,7 +481,6 @@
         
         initializeFirebase();
     </script>
-    
 
 </body>
 </html>
