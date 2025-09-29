@@ -1,5 +1,8 @@
 Air Force Curriculum Design Tool - User Guide
+
+
 Page 1: Introduction & Core Concepts
+
 1.1. Overview
 Welcome to the Air Force Curriculum Design Tool! This is a dynamic, web-based application designed to streamline the process of creating, managing, and modifying course curricula. It provides an intuitive, task-board-style interface that allows curriculum developers and managers to visually organize course content, track instructional time, and automatically generate reports on any changes made.
 
