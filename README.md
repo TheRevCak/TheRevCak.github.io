@@ -1,148 +1,114 @@
-Air Force Curriculum Design Tool - User Guide
+Air Force Curriculum Design Tool - User Guide (v2.0 - Collaborative Edition)
 
 
-Page 1: Introduction & Core Concepts
+Page 1: Introduction to a Collaborative Platform
 
 1.1. Overview
-Welcome to the Air Force Curriculum Design Tool! This is a dynamic, web-based application designed to streamline the process of creating, managing, and modifying course curricula. It provides an intuitive, task-board-style interface that allows curriculum developers and managers to visually organize course content, track instructional time, and automatically generate reports on any changes made.
+Welcome to the next generation of the Air Force Curriculum Design Tool! This version has been completely rebuilt as a real-time, collaborative platform designed for modern curriculum development teams. It moves beyond a single-user tool to a shared, cloud-based workspace where multiple designers and managers can build and modify course curricula simultaneously.
 
-The tool was built to replace static documents and spreadsheets, offering a more fluid and responsive workflow. By visualizing the course structure and automating time calculations, it helps ensure that curricula are well-paced, comprehensive, and easy to analyze for leadership review.
+The core functionality remains: an intuitive, task-board interface to visually organize content and automate time calculations. However, with the integration of a cloud backend, your data is now centralized, secure, and always in sync across your entire team.
 
-1.2. Intended Audience
-This application is primarily designed for:
+1.2. Key Enhancements
+Real-Time Collaboration: Multiple users can work on the same course at the same time. Changes made by one user are instantly visible to everyone else.
 
-Curriculum Development Managers: To oversee course structure, total instructional time, and the logical flow of content.
+Cloud Data Storage: Your curriculum data is no longer stored in your browser. It's saved in a secure, central cloud database, meaning you can access your work from any computer.
 
-Instructional Designers & Course Developers: To build, rearrange, and refine modules, objectives, and teaching steps in a flexible environment.
+Full Drag-and-Drop: Reorder objectives within a module or teaching steps within an objective. The new order is saved automatically and synchronized for all users.
 
-Leadership & Review Personnel: To quickly understand the impact of curriculum changes through detailed, auto-generated summary reports.
+Persistent Data: All edits to titles and times are saved instantly to the cloud. There is no "save" button—your work is always preserved.
 
-While it was developed with the specific needs of Air Force curriculum management in mind, its design is versatile enough for any educational or training organization that requires a structured approach to course planning.
+Page 2: Setup & Configuration
 
-1.3. Core Concepts
-The application organizes your curriculum into a clear hierarchy. Understanding these levels is key to using the tool effectively.
+2.1. One-Time Firebase Setup (Required)
 
-Modules: The highest-level container, representing a major section of a course (e.g., "Module 1: Basic Aerodynamics"). A course is typically made up of multiple modules.
+To power the new collaborative features, the application uses Google Firebase, a secure and scalable cloud platform. A designated administrator will need to perform this free, one-time setup.
 
-Objectives: Specific, measurable learning goals that must be achieved within each module (e.g., "Objective 1.1: Understand the Principles of Lift"). The order of objectives defines the learning path.
+Step 1: Create a Firebase Project
 
-Teaching Steps: These are the individual activities, lectures, practical exercises, or simulations required to meet an objective (e.g., "Introduction to Airfoils," "Bernoulli's Principle Activity"). Each step has an associated time value.
+Go to the Firebase Console.
 
-Page 2: Features in Detail
-2.1. Visual Curriculum Management
-The primary interface is a visual board that allows you to see your entire course structure at a glance.
+Click "Add project" and give it a name (e.g., "AF Curriculum Tool").
 
-Hierarchical Layout: Modules, objectives, and steps are nested visually, making the relationships between them immediately clear.
+Follow the on-screen steps. You can disable Google Analytics if you wish.
 
-Drag-and-Drop Interface: This is the core of the tool's flexibility.
+Step 2: Create a Firestore Database
 
-Reorder Objectives: Effortlessly drag and drop objectives within a module to change the instructional flow. The workflow visualization lines will automatically redraw to reflect the new sequence.
+Inside your new project, go to the "Build" section on the left and click "Firestore Database".
 
-Move Teaching Steps: Drag a teaching step from one objective to another. This is useful when you realize an activity is better suited to a different learning goal.
+Click "Create database".
 
-In-line Editing: All text fields for titles and times are editable directly on the board. There are no pop-ups or separate screens, allowing for rapid changes.
+Start in Test mode. This allows open access for development. You can secure it later with security rules.
 
-2.2. Automatic Time Aggregation
-Manual time calculation is prone to error. This tool automates the entire process.
+Choose a location for your database (a us-central option is recommended).
 
-Step-Level Timing: You only need to enter the duration in minutes for each individual Teaching Step.
+Step 3: Get Your Project Configuration
 
-Objective Totals: The tool automatically sums the times of all steps within an objective and displays the total in a green lozenge.
+In your Firebase project, go to "Project Settings" (click the gear icon at the top of the left sidebar).
 
-Module Totals: The total time for all objectives within a module is calculated and displayed prominently in a blue lozenge in the module header.
+In the "General" tab, scroll down to "Your apps".
 
-Live Updates: All time totals update in real-time as you add, remove, or modify the duration of any teaching step.
+Click the web icon (</>) to create a new web app.
 
-2.3. Workflow Visualization
-To ensure a logical learning path, the tool draws connections between objectives.
+Give it a nickname (e.g., "Curriculum App") and click "Register app".
 
-Connecting Lines: A clear, visual workflow map with dashed lines and arrows connects the objectives within each module.
+Firebase will provide you with a firebaseConfig object. It will look like this:
 
-Sequence Mapping: This helps you visualize the instructional sequence and identify any potential gaps or illogical progressions for learners. The map automatically updates whenever objectives are reordered.
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project-id",
+  // ... and so on
+};
 
-2.4. Automated Change Reporting
-This feature provides accountability and simplifies communication with leadership.
+Step 4: Add Configuration to index.html
 
-On-Demand Reports: At any point, click the Generate Change Report button. The tool compares the current state of the curriculum to the state it was in when the page was first loaded.
+Open the index.html file in a text editor.
 
-Detailed Summaries: The report provides a clear, text-based log of all modifications, including:
+Find the firebaseConfig object near the top of the <script type="module"> section.
 
-[+] ADDED: Any new modules, objectives, or steps.
+Carefully copy and paste the values from your Firebase project into the placeholder firebaseConfig object in the file.
 
-[-] DELETED: Any content that has been removed.
+Save the index.html file. Your application is now connected to the cloud!
 
-Title changed from...: Records of any renaming.
+Page 3: Features in a Collaborative Environment
 
-Total time changed by...: Precise changes in timing for modules and objectives.
+3.1. Working as a Team
 
-Objective flow has changed: A summary of the old vs. new order of objectives.
+Shared Workspace: To collaborate, every team member must use an index.html file that has been configured with the exact same Firebase Project ID. The easiest way to ensure this is to have the administrator configure one file and then distribute it to the team.
 
-Clipboard Ready: The report is designed for easy copying and pasting into emails, Word documents, or presentations.
+Live Updates: When a colleague drags an objective, adds a teaching step, or changes a time, you will see the update on your screen within seconds, without needing to refresh the page.
 
-Page 3: Usage Instructions & FAQ
-3.1. Getting Started & Basic Operations
-Open the File: Simply open the course_design_tool.html file in a modern web browser (Chrome, Firefox, Edge, Safari). The application will load with sample data to demonstrate its functionality.
+Share Your Project ID: Click the "Share" button in the header to easily view and copy your project's ID, which is the key to your shared workspace.
 
-Edit Content: Click on any title to type. Click on a time field to change the number.
+3.2. Future-Ready Features
+This new platform is designed for growth. The following advanced features are now possible and can be implemented in future updates:
 
-Add Content: Use the + Add buttons at the module, objective, or step level to build out your course.
+Version History: The system can be configured to take snapshots of the curriculum, allowing you to review and restore previous versions of a module or the entire course.
 
-Delete Content: Use the Delete or ✕ buttons to remove items. Deleting a module will remove all its contents, and a confirmation prompt will appear to prevent accidents.
+PDF Exports & Dashboards: The centralized data can be used to generate professional PDF exports and visual dashboards for leadership, showing time breakdowns and resource allocation.
 
-3.2. Data Management & Persistence
-Local Storage: Your work is automatically saved to your browser's local storage. This means the data is stored on the specific computer and in the specific browser you are using.
+Audit Trails: By upgrading to a full user login system (e.g., sign-in with email), every change can be logged with the user's name and a timestamp, providing a complete history of curriculum modifications.
 
-Persistence: You can safely close the browser tab and reopen it later; your curriculum will be preserved.
+Page 4: Technical Details & FAQ
 
-Important Limitations:
+4.1. Data Management in the Cloud
 
-Data is not automatically shared between different computers or different web browsers (e.g., work done in Chrome will not appear in Firefox).
+No More localStorage: The application no longer uses your browser's local storage. All data is sent to and received from your Firestore database in real-time.
 
-Clearing your browser's cache or site data will permanently erase your work. For long-term storage, it is recommended to keep a backup of your curriculum plan.
+Benefits:
 
-3.3. Frequently Asked Questions (FAQ)
-Can I share my curriculum with a colleague?
-Not directly through the application. Since data is stored locally, the best way to share is to have them use the tool on their machine or to use the "Generate Change Report" to export a text-based summary of the structure.
+Accessibility: Access your data from any device.
 
-Is there an "undo" button?
-Currently, there is no undo functionality. Changes like deletions are permanent for the session. However, if you reload the page without making further changes, it will revert to the state it was in when you first opened it.
+Data Safety: Your data is safe in the cloud and not at risk of being cleared with your browser cache.
 
-How do I start a new curriculum from scratch?
-To clear all existing data, you can clear the local storage for the site. In most browsers, you can do this by opening the developer tools (F12), going to the "Application" tab, selecting "Local Storage," and deleting the relevant key associated with the file.
+Scalability: The system can now handle much larger and more complex course structures.
 
-Can I export my work to a file?
-The application does not have a file export feature. The best way to create a distributable copy of your work is to use the Generate Change Report feature at the end of a session and save the text output in a separate document.
+4.2. Frequently Asked Questions (FAQ)
+Is this still free?
+Yes. The Firebase "Spark Plan" (the free tier) is extremely generous and is more than sufficient for the needs of most curriculum design teams, offering a significant amount of reads, writes, and storage at no cost.
 
-What happens if the application is updated?
-Since this is a single HTML file, "updating" it means replacing it with a new version. This action should not affect your locally stored data as long as the domain/path remains the same. However, it is always a good practice to back up your report data before switching to a new version.
+How do I share the curriculum with a colleague now?
+Once you have configured the index.html file with your Firebase project keys, you can simply send them that same HTML file. When they open it, it will automatically connect to your shared cloud database. Alternatively, you can host the file on a platform like GitHub Pages for even easier access.
 
-Page 4: Advanced Topics & Technical Info
-4.1. Best Practices for Curriculum Management
-Session-Based Changes: Think of your work in sessions. Open the tool, make a series of related changes, generate a change report, and then save that report externally. This creates a historical log of your design decisions.
-
-Backup Your Data: Since data is stored locally in the browser, it's vulnerable to being cleared. Periodically, copy the entire content of the Change Report and paste it into a text file or official document as a backup of your curriculum structure.
-
-Managing Large Courses: For very large or complex courses, consider breaking them down into separate major parts and managing them in separate sessions to keep the visual board clean and responsive.
-
-4.2. Troubleshooting
-My data has disappeared!
-This is almost always caused by clearing browser data/cache. Unfortunately, if the local storage has been cleared, the data cannot be recovered through the tool. This highlights the importance of regular backups using the report feature.
-
-Drag-and-Drop is not working.
-This feature should work in all modern web browsers. If you are having issues, ensure you are using an up-to-date version of Chrome, Firefox, Edge, or Safari. If the problem persists, try disabling browser extensions that might interfere with JavaScript execution.
-
-The workflow lines look misaligned.
-The lines are drawn automatically based on the position of the objectives. If they appear misaligned, a simple page refresh will usually force them to redraw correctly.
-
-4.3. Technical Details
-Platform: This is a standalone client-side web application. It runs entirely in your web browser and does not require an internet connection after the initial file is loaded.
-
-Technology Stack:
-
-HTML: For the core structure.
-
-Tailwind CSS: For modern styling and a responsive layout.
-
-JavaScript: For all application logic, including drag-and-drop, time calculations, and report generation.
-
-Data Storage: All data is stored in the browser's localStorage API, a key-value store that persists across browser sessions.
+What if two people try to edit the exact same thing at the same time?
+Firestore is designed to handle this. For text editing, it uses a "last write wins" model, meaning the last change to be saved will be the one that all users see. For drag-and-drop reordering, the operations are transactional, ensuring the list order remains consistent for everyone.
