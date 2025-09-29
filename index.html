@@ -79,13 +79,13 @@
         import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, writeBatch, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = {
-       const firebaseConfig = {
             apiKey: "AIzaSyCwe6SLVFiq7Wx0IeWq9LDYMsczKnLem_Q",
             authDomain: "uasf-curriculum-dev.firebaseapp.com",
             projectId: "uasf-curriculum-dev",
-            storageBucket: "uasf-curriculum-dev.firebasestorage.app",
+            storageBucket: "uasf-curriculum-dev.appspot.com",
             messagingSenderId: "816577874619",
-            appId: "1:816577874619:web:a7694c0747bd33655cf79e"
+            appId: "1:816577874619:web:a7694c0747bd33655cf79e",
+            measurementId: "G-G1HWDYZHJ8"
         };
 
         let app, auth, db, userId, courseDataUnsubscribe;
@@ -271,7 +271,7 @@
                     } else {
                         const newObjectives = JSON.parse(JSON.stringify(data.objectives || []));
                         const objIndex = newObjectives.findIndex(o => o.id === objectiveId);
-                        if (objIndex === -1) return;
+                        if (objIndex ===-1) return;
 
                         if (!stepId) { // Updating objective title
                              newObjectives[objIndex].title = value;
