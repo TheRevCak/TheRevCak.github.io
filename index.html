@@ -92,16 +92,16 @@
     measurementId: "G-G1HWDYZHJ8"
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-
-        let app, auth, db, userId, courseDataUnsubscribe;
+         let app, auth, db, userId, courseDataUnsubscribe;
         let localCourseData = [];
 
         const modulesContainer = document.getElementById('modules-container');
         const userStatus = document.getElementById('user-status');
         const shareButton = document.getElementById('share-button');
+
+         // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
 
         function initializeFirebase() {
              if (firebaseConfig.apiKey === "YOUR_API_KEY" || !firebaseConfig.projectId) {
