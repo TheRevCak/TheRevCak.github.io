@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Force Curriculum Design Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .module {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db; /* cool-gray-300 */
+        }
+        .objective {
+            background-color: #f9fafb; /* gray-50 */
+            border: 1px solid #e5e7eb; /* gray-200 */
+        }
+        .teaching-step {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db; /* gray-300 */
+        }
+        .teaching-step:hover {
+            background-color: #eff6ff; /* blue-50 */
+        }
+        .time-input {
+            width: 60px;
+            text-align: center;
+        }
+        .header-bg {
+            background-color: #1e3a8a; /* Dark blue for header */
+        }
+        .summary-modal-bg {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        /* Drag and Drop Styling */
+        .dragging {
+            opacity: 0.5;
+            border: 2px dashed #3b82f6; /* blue-500 */
+        }
+        .drag-over {
+            background-color: #dbeafe; /* blue-100 */
+            border-color: #60a5fa; /* blue-400 */
+        }
+        .workflow-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicking through the SVG layer */
+            z-index: 0;
+        }
+        .objective-container {
+            position: relative;
+        }
+        .objective {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="header-bg text-white p-4 shadow-md flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">Curriculum Design Tool</h1>
+                <p class="text-sm opacity-80">Air Force Curriculum Development</p>
+            </div>
+            <div>
+                <button id="generateReportBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105">Generate Change Report</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-4 md:p-6 lg:p-8">
+            <div id="modules-container" class="space-y-8">
+                <!-- Modules will be rendered here by JavaScript -->
+            </div>
+            <div class="mt-8">
+                <button id="addModuleBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">+ Add New Module</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Summary Report Modal -->
+    <div id="summaryModal" class="fixed inset-0 z-50 items-center justify-center hidden summary-modal-bg">
+        <div class="bg-white rounded-lg shadow-2xl w-11/12 md:w-3/4 lg:w-2/3 max-w-4xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Change Summary Report</h2>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <pre id="reportContent" class="whitespace-pre-wrap text-sm bg-gray-100 p-4 rounded-md font-mono"></pre>
+            </div>
+            <div class="p-4 border-t flex justify-end">
+                 <button id="copyReportBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg mr-2">Copy to Clipboard</button>
+                <button id="closeModalBtn2" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = {
+                // --- STATE MANAGEMENT ---
+                state: {
+                    modules: []
+                },
+                initialState: null,
+                draggedItem: {
+                    element: null,
+                    moduleId: null,
+                    objectiveId: null,
+                    stepId: null,
+                    type: null, // 'objective' or 'step'
+                },
+
+                // --- INITIALIZATION ---
+                init() {
+                    this.loadState(); // Load from localStorage or use sample data
+                    this.initialState = JSON.parse(JSON.stringify(this.state)); // Deep copy for change tracking
+                    this.render();
+                    this.attachGlobalEventListeners();
+                    window.addEventListener('resize', () => this.renderWorkflowLines());
+                },
+
+                loadState() {
+                    const savedState = localStorage.getItem('curriculumState');
+                    if (savedState) {
+                        this.state = JSON.parse(savedState);
+                    } else {
+                        // Sample Data for first-time use
+                        this.state.modules = [{
+                            id: `mod_${Date.now()}`,
+                            title: "Module 1: Basic Aerodynamics",
+                            objectives: [{
+                                id: `obj_${Date.now()}_1`,
+                                title: "Objective 1.1: Principles of Lift",
+                                steps: [
+                                    { id: `step_${Date.now()}_1`, title: "Introduction to Airfoils", time: 15 },
+                                    { id: `step_${Date.now()}_2`, title: "Bernoulli's Principle Activity", time: 30 },
+                                    { id: `step_${Date.now()}_3`, title: "Angle of Attack Simulation", time: 25 },
+                                ]
+                            }, {
+                                id: `obj_${Date.now()}_2`,
+                                title: "Objective 1.2: Four Forces of Flight",
+                                steps: [
+                                    { id: `step_${Date.now()}_4`, title: "Lecture: Lift, Weight, Thrust, Drag", time: 45 },
+                                    { id: `step_${Date.now()}_5`, title: "Group Discussion", time: 20 },
+                                ]
+                            }]
+                        }];
+                    }
+                },
+
+                saveState() {
+                    localStorage.setItem('curriculumState', JSON.stringify(this.state));
+                },
+
+                // --- RENDERING ---
+                render() {
+                    const container = document.getElementById('modules-container');
+                    container.innerHTML = '';
+                    this.state.modules.forEach(module => {
+                        container.appendChild(this.createModuleElement(module));
+                    });
+                    this.attachDragAndDropListeners();
+                    this.renderWorkflowLines(); // Render workflow lines after DOM is updated
+                },
+                
+                renderWorkflowLines() {
+                    this.state.modules.forEach(module => {
+                        const objectiveContainer = document.querySelector(`[data-module-id="${module.id}"] .objective-container`);
+                        if (!objectiveContainer) return;
+                        
+                        let svg = objectiveContainer.querySelector('.workflow-svg');
+                        if (!svg) {
+                            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            svg.classList.add('workflow-svg');
+                            objectiveContainer.prepend(svg);
+                        }
+                        svg.innerHTML = ''; // Clear previous lines
+
+                        const objectiveElements = Array.from(objectiveContainer.querySelectorAll('.objective'));
+                        if (objectiveElements.length < 2) return;
+
+                        for (let i = 0; i < objectiveElements.length - 1; i++) {
+                            const startElem = objectiveElements[i];
+                            const endElem = objectiveElements[i+1];
+
+                            const startRect = startElem.getBoundingClientRect();
+                            const endRect = endElem.getBoundingClientRect();
+                            const containerRect = objectiveContainer.getBoundingClientRect();
+
+                            const x1 = startRect.left + startRect.width / 2 - containerRect.left;
+                            const y1 = startRect.top + startRect.height - containerRect.top;
+                            const x2 = endRect.left + endRect.width / 2 - containerRect.left;
+                            const y2 = endRect.top - containerRect.top;
+                            
+                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            const curve = `M ${x1} ${y1} C ${x1} ${y1 + 50}, ${x2} ${y2 - 50}, ${x2} ${y2}`;
+                            line.setAttribute('d', curve);
+                            line.setAttribute('stroke', '#9ca3af'); // gray-400
+                            line.setAttribute('stroke-width', '2');
+                            line.setAttribute('fill', 'none');
+                            line.setAttribute('stroke-dasharray', '5,5');
+
+                            // Arrowhead
+                            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                            arrow.setAttribute('points', `${x2},${y2} ${x2-5},${y2-10} ${x2+5},${y2-10}`);
+                            arrow.setAttribute('fill', '#9ca3af');
+
+                            svg.appendChild(line);
+                            svg.appendChild(arrow);
+                        }
+                    });
+                },
+
+                // --- ELEMENT CREATION ---
+                createModuleElement(module) {
+                    const moduleTime = this.calculateModuleTime(module);
+                    const element = document.createElement('div');
+                    element.className = 'module p-4 rounded-lg shadow-lg space-y-4';
+                    element.dataset.moduleId = module.id;
+                    element.innerHTML = `
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <input class="text-xl font-bold w-full bg-transparent focus:outline-none focus:bg-gray-100 rounded p-1" value="${module.title}" data-module-id="${module.id}" data-type="module-title">
+                            <div class="flex items-center space-x-4">
+                                <span class="text-lg font-semibold text-blue-800 bg-blue-100 px-3 py-1 rounded-full">${moduleTime} min</span>
+                                <button class="text-red-500 hover:text-red-700 font-bold" data-action="delete-module" data-module-id="${module.id}">Delete Module</button>
+                            </div>
+                        </div>
+                        <div class="objective-container space-y-3 relative">
+                           ${module.objectives.map(obj => this.createObjectiveElement(obj, module.id).outerHTML).join('')}
+                        </div>
+                        <button class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 text-sm rounded-md" data-action="add-objective" data-module-id="${module.id}">+ Add Objective</button>
+                    `;
+                    return element;
+                },
+
+                createObjectiveElement(objective, moduleId) {
+                    const objectiveTime = this.calculateObjectiveTime(objective);
+                    const element = document.createElement('div');
+                    element.className = 'objective p-3 rounded-lg shadow-sm';
+                    element.dataset.objectiveId = objective.id;
+                    element.dataset.moduleId = moduleId;
+                    element.draggable = true;
+                    element.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <input class="font-semibold w-full bg-transparent focus:outline-none focus:bg-white rounded p-1" value="${objective.title}" data-module-id="${moduleId}" data-objective-id="${objective.id}" data-type="objective-title">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-md font-medium text-green-800 bg-green-100 px-2 py-0.5 rounded-full">${objectiveTime} min</span>
+                                <button class="text-xs text-red-500 hover:text-red-700" data-action="delete-objective" data-module-id="${moduleId}" data-objective-id="${objective.id}">Delete</button>
+                            </div>
+                        </div>
+                        <div class="steps-container space-y-2">
+                            ${objective.steps.map(step => this.createStepElement(step, moduleId, objective.id).outerHTML).join('')}
+                        </div>
+                        <button class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-2 text-xs rounded" data-action="add-step" data-module-id="${moduleId}" data-objective-id="${objective.id}">+ Add Step</button>
+                    `;
+                    return element;
+                },
+
+                createStepElement(step, moduleId, objectiveId) {
+                    const element = document.createElement('div');
+                    element.className = 'teaching-step flex items-center justify-between p-2 rounded-md cursor-grab';
+                    element.dataset.stepId = step.id;
+                    element.dataset.objectiveId = objectiveId;
+                    element.dataset.moduleId = moduleId;
+                    element.draggable = true;
+                    element.innerHTML = `
+                        <input class="flex-grow bg-transparent focus:outline-none focus:bg-gray-100 rounded px-1" value="${step.title}" data-module-id="${moduleId}" data-objective-id="${objectiveId}" data-step-id="${step.id}" data-type="step-title">
+                        <div class="flex items-center">
+                            <input type="number" min="0" class="time-input bg-gray-100 rounded border text-gray-700 p-1 mx-2" value="${step.time}" data-module-id="${moduleId}" data-objective-id="${objectiveId}" data-step-id="${step.id}" data-type="step-time">
+                            <span>min</span>
+                            <button class="ml-2 text-xs text-red-400 hover:text-red-600" data-action="delete-step" data-module-id="${moduleId}" data-objective-id="${objectiveId}" data-step-id="${step.id}">✕</button>
+                        </div>
+                    `;
+                    return element;
+                },
+
+                // --- EVENT HANDLING ---
+                attachGlobalEventListeners() {
+                    document.getElementById('addModuleBtn').addEventListener('click', () => this.addModule());
+                    document.getElementById('modules-container').addEventListener('click', (e) => this.handleContainerClick(e));
+                    document.getElementById('modules-container').addEventListener('input', (e) => this.handleContainerInput(e));
+                    
+                    // Modal listeners
+                    const reportBtn = document.getElementById('generateReportBtn');
+                    const closeModalBtns = [document.getElementById('closeModalBtn'), document.getElementById('closeModalBtn2')];
+                    const modal = document.getElementById('summaryModal');
+                    const copyBtn = document.getElementById('copyReportBtn');
+
+                    reportBtn.addEventListener('click', () => this.showReport());
+                    closeModalBtns.forEach(btn => btn.addEventListener('click', () => modal.classList.add('hidden')));
+                    copyBtn.addEventListener('click', () => this.copyReportToClipboard());
+                },
+
+                handleContainerClick(e) {
+                    const action = e.target.dataset.action;
+                    if (!action) return;
+
+                    const { moduleId, objectiveId, stepId } = e.target.dataset;
+
+                    if (action === 'add-objective') this.addObjective(moduleId);
+                    if (action === 'add-step') this.addStep(moduleId, objectiveId);
+                    if (action === 'delete-module') this.deleteModule(moduleId);
+                    if (action === 'delete-objective') this.deleteObjective(moduleId, objectiveId);
+                    if (action === 'delete-step') this.deleteStep(moduleId, objectiveId, stepId);
+                },
+
+                handleContainerInput(e) {
+                    const { moduleId, objectiveId, stepId, type } = e.target.dataset;
+                    if (!type) return;
+
+                    const module = this.state.modules.find(m => m.id === moduleId);
+                    if (!module) return;
+
+                    if (type === 'module-title') {
+                        module.title = e.target.value;
+                    } else if (type === 'objective-title') {
+                        const objective = module.objectives.find(o => o.id === objectiveId);
+                        if (objective) objective.title = e.target.value;
+                    } else if (type === 'step-title' || type === 'step-time') {
+                        const objective = module.objectives.find(o => o.id === objectiveId);
+                        if (objective) {
+                            const step = objective.steps.find(s => s.id === stepId);
+                            if (step) {
+                                if (type === 'step-title') {
+                                    step.title = e.target.value;
+                                } else {
+                                    step.time = parseInt(e.target.value, 10) || 0;
+                                }
+                            }
+                        }
+                    }
+                    this.saveState();
+                    this.render(); // Re-render to update times
+                },
+
+                // --- DATA MANIPULATION (CRUD) ---
+                addModule() {
+                    const newModule = {
+                        id: `mod_${Date.now()}`,
+                        title: "New Module",
+                        objectives: []
+                    };
+                    this.state.modules.push(newModule);
+                    this.saveState();
+                    this.render();
+                },
+
+                addObjective(moduleId) {
+                    const module = this.state.modules.find(m => m.id === moduleId);
+                    if (module) {
+                        const newObjective = {
+                            id: `obj_${Date.now()}`,
+                            title: "New Objective",
+                            steps: []
+                        };
+                        module.objectives.push(newObjective);
+                        this.saveState();
+                        this.render();
+                    }
+                },
+                
+                addStep(moduleId, objectiveId) {
+                    const module = this.state.modules.find(m => m.id === moduleId);
+                    if (module) {
+                        const objective = module.objectives.find(o => o.id === objectiveId);
+                        if (objective) {
+                             const newStep = {
+                                id: `step_${Date.now()}`,
+                                title: "New Teaching Step",
+                                time: 10
+                            };
+                            objective.steps.push(newStep);
+                            this.saveState();
+                            this.render();
+                        }
+                    }
+                },
+
+                deleteModule(moduleId) {
+                    if (confirm('Are you sure you want to delete this entire module?')) {
+                        this.state.modules = this.state.modules.filter(m => m.id !== moduleId);
+                        this.saveState();
+                        this.render();
+                    }
+                },
+
+                deleteObjective(moduleId, objectiveId) {
+                    const module = this.state.modules.find(m => m.id === moduleId);
+                    if (module) {
+                        module.objectives = module.objectives.filter(o => o.id !== objectiveId);
+                        this.saveState();
+                        this.render();
+                    }
+                },
+                
+                deleteStep(moduleId, objectiveId, stepId) {
+                    const module = this.state.modules.find(m => m.id === moduleId);
+                    if (module) {
+                        const objective = module.objectives.find(o => o.id === objectiveId);
+                        if (objective) {
+                            objective.steps = objective.steps.filter(s => s.id !== stepId);
+                            this.saveState();
+                            this.render();
+                        }
+                    }
+                },
+
+                // --- CALCULATIONS ---
+                calculateObjectiveTime(objective) {
+                    return objective.steps.reduce((total, step) => total + (step.time || 0), 0);
+                },
+
+                calculateModuleTime(module) {
+                    return module.objectives.reduce((total, objective) => total + this.calculateObjectiveTime(objective), 0);
+                },
+
+                // --- DRAG AND DROP ---
+                attachDragAndDropListeners() {
+                    const draggables = document.querySelectorAll('[draggable="true"]');
+                    draggables.forEach(draggable => {
+                        draggable.addEventListener('dragstart', e => this.handleDragStart(e));
+                        draggable.addEventListener('dragend', e => this.handleDragEnd(e));
+                    });
+                    
+                    const dropTargets = document.querySelectorAll('.steps-container, .objective-container');
+                    dropTargets.forEach(target => {
+                       target.addEventListener('dragover', e => this.handleDragOver(e));
+                       target.addEventListener('dragleave', e => this.handleDragLeave(e));
+                       target.addEventListener('drop', e => this.handleDrop(e));
+                    });
+                },
+
+                handleDragStart(e) {
+                    e.target.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    this.draggedItem.element = e.target;
+                    
+                    const { moduleId, objectiveId, stepId } = e.target.dataset;
+                    this.draggedItem.moduleId = moduleId;
+
+                    if (stepId) { // It's a teaching step
+                        this.draggedItem.type = 'step';
+                        this.draggedItem.objectiveId = objectiveId;
+                        this.draggedItem.stepId = stepId;
+                    } else { // It's an objective
+                        this.draggedItem.type = 'objective';
+                        this.draggedItem.objectiveId = objectiveId;
+                    }
+                },
+                
+                handleDragEnd(e) {
+                    e.target.classList.remove('dragging');
+                    this.draggedItem = {}; // Reset
+                },
+
+                handleDragOver(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    const dropTarget = e.target.closest('.steps-container, .objective-container');
+                    if (dropTarget) {
+                        dropTarget.classList.add('drag-over');
+                    }
+                },
+                
+                handleDragLeave(e) {
+                     const dropTarget = e.target.closest('.steps-container, .objective-container');
+                     if (dropTarget) {
+                        dropTarget.classList.remove('drag-over');
+                     }
+                },
+
+                handleDrop(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const dropTarget = e.target.closest('.steps-container, .objective-container');
+                    if (!dropTarget) return;
+                    
+                    dropTarget.classList.remove('drag-over');
+
+                    const targetIsObjectiveContainer = dropTarget.classList.contains('objective-container');
+                    const draggedIsObjective = this.draggedItem.type === 'objective';
+                    
+                    if (targetIsObjectiveContainer && draggedIsObjective) {
+                        this.moveObjective(dropTarget, e.clientY);
+                    } else if (!targetIsObjectiveContainer && !draggedIsObjective) {
+                        this.moveStep(dropTarget, e.clientY);
+                    }
+
+                    this.saveState();
+                    this.render();
+                },
+                
+                moveObjective(container, yPosition) {
+                    const targetModuleId = container.closest('.module').dataset.moduleId;
+                    if (this.draggedItem.moduleId !== targetModuleId) return; // Disallow moving objectives between modules for simplicity
+
+                    const sourceModule = this.state.modules.find(m => m.id === this.draggedItem.moduleId);
+                    const [draggedObjective] = sourceModule.objectives.splice(
+                        sourceModule.objectives.findIndex(o => o.id === this.draggedItem.objectiveId), 1
+                    );
+
+                    const afterElement = this.getDragAfterElement(container, yPosition);
+                    if (afterElement == null) {
+                        sourceModule.objectives.push(draggedObjective);
+                    } else {
+                        const targetId = afterElement.dataset.objectiveId;
+                        const targetIndex = sourceModule.objectives.findIndex(o => o.id === targetId);
+                        sourceModule.objectives.splice(targetIndex, 0, draggedObjective);
+                    }
+                },
+
+                moveStep(container, yPosition) {
+                    const targetObjectiveId = container.closest('.objective').dataset.objectiveId;
+                    const targetModuleId = container.closest('.module').dataset.moduleId;
+
+                    // Remove step from source
+                    const sourceModule = this.state.modules.find(m => m.id === this.draggedItem.moduleId);
+                    const sourceObjective = sourceModule.objectives.find(o => o.id === this.draggedItem.objectiveId);
+                    const [draggedStep] = sourceObjective.steps.splice(
+                        sourceObjective.steps.findIndex(s => s.id === this.draggedItem.stepId), 1
+                    );
+                    
+                    // Add step to target
+                    const targetModule = this.state.modules.find(m => m.id === targetModuleId);
+                    const targetObjective = targetModule.objectives.find(o => o.id === targetObjectiveId);
+                    
+                    const afterElement = this.getDragAfterElement(container, yPosition);
+                     if (afterElement == null) {
+                        targetObjective.steps.push(draggedStep);
+                    } else {
+                        const targetId = afterElement.dataset.stepId;
+                        const targetIndex = targetObjective.steps.findIndex(s => s.id === targetId);
+                        targetObjective.steps.splice(targetIndex, 0, draggedStep);
+                    }
+                },
+
+                getDragAfterElement(container, y) {
+                    const draggableElements = [...container.querySelectorAll('[draggable="true"]:not(.dragging)')];
+                    return draggableElements.reduce((closest, child) => {
+                        const box = child.getBoundingClientRect();
+                        const offset = y - box.top - box.height / 2;
+                        if (offset < 0 && offset > closest.offset) {
+                            return { offset: offset, element: child };
+                        } else {
+                            return closest;
+                        }
+                    }, { offset: Number.NEGATIVE_INFINITY }).element;
+                },
+
+                // --- REPORTING ---
+                showReport() {
+                    const report = this.generateChangeReport();
+                    document.getElementById('reportContent').textContent = report;
+                    document.getElementById('summaryModal').classList.remove('hidden');
+                    document.getElementById('summaryModal').classList.add('flex');
+                },
+                
+                copyReportToClipboard() {
+                    const reportText = document.getElementById('reportContent').textContent;
+                    // Using document.execCommand for wider compatibility in embedded environments
+                    const textArea = document.createElement("textarea");
+                    textArea.value = reportText;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                    }
+                    document.body.removeChild(textArea);
+                },
+
+                generateChangeReport() {
+                    let report = `CHANGE SUMMARY REPORT\nGenerated on: ${new Date().toLocaleString()}\n\n`;
+                    report += "================================================\n\n";
+                    
+                    const initial = this.initialState.modules.reduce((acc, m) => ({...acc, [m.id]: m}), {});
+                    const current = this.state.modules.reduce((acc, m) => ({...acc, [m.id]: m}), {});
+
+                    // Check for added/deleted modules
+                    const initialIds = new Set(Object.keys(initial));
+                    const currentIds = new Set(Object.keys(current));
+                    
+                    currentIds.forEach(id => {
+                        if (!initialIds.has(id)) report += `[+] ADDED MODULE: "${current[id].title}"\n`;
+                    });
+                     initialIds.forEach(id => {
+                        if (!currentIds.has(id)) report += `[-] DELETED MODULE: "${initial[id].title}"\n`;
+                    });
+
+                    // Compare existing modules
+                    this.state.modules.forEach(currentModule => {
+                        const initialModule = initial[currentModule.id];
+                        if (!initialModule) return; // Already handled as 'added'
+
+                        let moduleChanges = '';
+                        // Title change
+                        if (currentModule.title !== initialModule.title) {
+                            moduleChanges += `    - Title changed from "${initialModule.title}" to "${currentModule.title}"\n`;
+                        }
+
+                        // Time change
+                        const initialTime = this.calculateModuleTime(initialModule);
+                        const currentTime = this.calculateModuleTime(currentModule);
+                        if (initialTime !== currentTime) {
+                            const delta = currentTime - initialTime;
+                            moduleChanges += `    - Total time changed by ${delta > 0 ? '+' : ''}${delta} minutes (from ${initialTime} to ${currentTime})\n`;
+                        }
+                        
+                        // Objective changes
+                        const objReport = this.compareObjectives(initialModule.objectives, currentModule.objectives);
+                        if (objReport) {
+                             moduleChanges += objReport;
+                        }
+
+                        if (moduleChanges) {
+                             report += `MODULE: "${currentModule.title}"\n${moduleChanges}\n`;
+                        }
+                    });
+
+                    return report.trim() ? report : "No changes detected since the page was loaded.";
+                },
+
+                compareObjectives(initialObjs, currentObjs) {
+                    let objectiveChanges = '';
+                    const initialMap = initialObjs.reduce((acc, o) => ({...acc, [o.id]: o}), {});
+                    const currentMap = currentObjs.reduce((acc, o) => ({...acc, [o.id]: o}), {});
+                    
+                    const initialOrder = initialObjs.map(o => o.id);
+                    const currentOrder = currentObjs.map(o => o.id);
+
+                    if (JSON.stringify(initialOrder) !== JSON.stringify(currentOrder)) {
+                        objectiveChanges += `    - Objective flow has changed.\n`;
+                        objectiveChanges += `      Old Order: ${initialObjs.map(o=>`'${o.title}'`).join(' -> ')}\n`;
+                        objectiveChanges += `      New Order: ${currentObjs.map(o=>`'${o.title}'`).join(' -> ')}\n`;
+                    }
+                    
+                    // Check individual objectives
+                    currentObjs.forEach(currentObj => {
+                        const initialObj = initialMap[currentObj.id];
+                         if (!initialObj) {
+                            objectiveChanges += `        [+] Added Objective: "${currentObj.title}"\n`;
+                            return;
+                         }
+
+                         let singleObjChanges = '';
+                         if (currentObj.title !== initialObj.title) {
+                            singleObjChanges += `            - Title changed from "${initialObj.title}"\n`;
+                         }
+                         
+                         const initTime = this.calculateObjectiveTime(initialObj);
+                         const currTime = this.calculateObjectiveTime(currentObj);
+                         if (initTime !== currTime) {
+                             const delta = currTime - initTime;
+                             singleObjChanges += `            - Time changed by ${delta > 0 ? '+' : ''}${delta} min (from ${initTime} to ${currTime})\n`;
+                         }
+
+                         const stepReport = this.compareSteps(initialObj.steps, currentObj.steps);
+                         if(stepReport) singleObjChanges += stepReport;
+
+                         if(singleObjChanges) {
+                            objectiveChanges += `      OBJECTIVE: "${currentObj.title}"\n${singleObjChanges}`;
+                         }
+                    });
+
+                    initialObjs.forEach(initialObj => {
+                        if (!currentMap[initialObj.id]) {
+                            objectiveChanges += `        [-] Deleted Objective: "${initialObj.title}"\n`;
+                        }
+                    });
+
+                    return objectiveChanges;
+                },
+
+                compareSteps(initialSteps, currentSteps) {
+                     let stepChanges = '';
+                     const initialMap = initialSteps.reduce((acc, s) => ({...acc, [s.id]: s}), {});
+                     const currentMap = currentSteps.reduce((acc, s) => ({...acc, [s.id]: s}), {});
+
+                    currentSteps.forEach(currentStep => {
+                        const initialStep = initialMap[currentStep.id];
+                        if (!initialStep) {
+                            stepChanges += `                [+] Added Step: "${currentStep.title}" (${currentStep.time} min)\n`;
+                            return;
+                        }
+                        if (currentStep.title !== initialStep.title || currentStep.time !== initialStep.time) {
+                            stepChanges += `                * Step updated: "${currentStep.title}" (from "${initialStep.title}", ${initialStep.time} min to ${currentStep.time} min)\n`;
+                        }
+                    });
+
+                    initialSteps.forEach(initialStep => {
+                        if (!currentMap[initialStep.id]) {
+                            stepChanges += `                [-] Deleted Step: "${initialStep.title}" (${initialStep.time} min)\n`;
+                        }
+                    });
+
+                    return stepChanges;
+                }
+
+            };
+
+            app.init();
+        });
+    </script>
+</body>
+</html>
