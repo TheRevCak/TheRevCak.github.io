@@ -87,6 +87,10 @@
     appId: "1:816577874619:web:a7694c0747bd33655cf79e",
     measurementId: "G-G1HWDYZHJ8"
   };
+         // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 
         let app, auth, db, userId, courseDataUnsubscribe;
         let localCourseData = [];
