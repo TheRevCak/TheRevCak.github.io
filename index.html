@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Innovative Learning Solutions Curriculum Design Tool - Collaborative</title>
+    <title>Air Force Curriculum Design Tool - Collaborative</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .module, .objective, .step { transition: all 0.2s ease-in-out; }
+        .module, .unit, .objective, .step { transition: all 0.2s ease-in-out; }
         .ghost { opacity: 0.4; background: #c8ebfb; border: 2px dashed #3b82f6; }
         .drag-handle { cursor: grab; }
         [contenteditable]:focus { outline: 2px solid #3b82f6; box-shadow: 0 0 0 2px #bfdbfe; border-radius: 4px; background-color: #eff6ff; }
         #app-container { position: relative; }
         #workflow-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-        .module, .objective-list { position: relative; z-index: 1; }
+        .module, .unit-list, .objective-list { position: relative; z-index: 1; }
         .sortable-chosen { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
@@ -27,7 +27,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-4">
                 <i class="fas fa-sitemap text-2xl text-blue-600"></i>
-                <h1 class="text-xl font-bold text-gray-900">Innovative Learning Solutions Curriculum Design Tool</h1>
+                <h1 class="text-xl font-bold text-gray-900">AF Curriculum Design Tool</h1>
             </div>
             <div id="auth-container" class="flex items-center space-x-4">
                  <span id="user-status" class="text-sm text-gray-500 flex items-center">Connecting...</span>
@@ -152,7 +152,7 @@
             const focusedElement = document.activeElement;
             const selection = window.getSelection();
             const selectionInfo = {
-                id: focusedElement?.closest('[data-module-id],[data-objective-id],[data-step-id]')?.id,
+                id: focusedElement?.closest('[data-id]')?.dataset.id,
                 field: focusedElement?.dataset.field,
                 startOffset: selection?.anchorOffset,
                 endOffset: selection?.focusOffset
@@ -168,7 +168,7 @@
 
             // Restore focus and cursor position after re-render
             if (selectionInfo.id && selectionInfo.field) {
-                const newFocusedElement = document.getElementById(selectionInfo.id)?.querySelector(`[data-field="${selectionInfo.field}"]`);
+                const newFocusedElement = document.querySelector(`[data-id="${selectionInfo.id}"] [data-field="${selectionInfo.field}"]`);
                 if (newFocusedElement) {
                     newFocusedElement.focus();
                     const textNode = newFocusedElement.firstChild;
@@ -190,74 +190,104 @@
             const el = document.createElement('div');
             el.className = 'module bg-white rounded-lg shadow-lg p-6';
             el.dataset.moduleId = module.id;
-            el.id = `module-${module.id}`;
+            el.dataset.id = `module-${module.id}`;
             
             let totalModuleTime = 0;
-            const objectives = (module.objectives || []).sort((a,b) => a.order - b.order);
+            const units = (module.units || []).sort((a,b) => a.order - b.order);
 
-            const objectivesContainer = document.createElement('div');
-            objectivesContainer.className = 'objective-list space-y-4';
-            objectivesContainer.dataset.moduleId = module.id;
+            const unitsContainer = document.createElement('div');
+            unitsContainer.className = 'unit-list space-y-6 mt-4';
+            unitsContainer.dataset.moduleId = module.id;
 
-            objectives.forEach(obj => {
-                let totalObjectiveTime = 0;
-                const stepsContainer = document.createElement('div');
-                stepsContainer.className = 'steps-container mt-2 space-y-2';
-                stepsContainer.dataset.objectiveId = obj.id;
+            units.forEach(unit => {
+                let totalUnitTime = 0;
+                const unitEl = document.createElement('div');
+                unitEl.className = 'unit bg-blue-50 border border-blue-200 rounded-lg p-4';
+                unitEl.dataset.unitId = unit.id;
+                unitEl.dataset.id = `unit-${unit.id}`;
 
-                (obj.steps || []).sort((a,b) => a.order - b.order).forEach(step => {
-                    totalObjectiveTime += Number(step.time) || 0;
-                    const stepEl = document.createElement('div');
-                    stepEl.className = 'step flex justify-between items-center p-2 bg-gray-50 rounded-md';
-                    stepEl.dataset.stepId = step.id;
-                    stepEl.id = `step-${step.id}`;
-                    stepEl.innerHTML = `
-                        <i class="fas fa-grip-vertical drag-handle text-gray-400 mr-3"></i>
-                        <p contenteditable="true" data-field="title" class="flex-grow">${step.title}</p>
-                        <div class="flex items-center ml-4">
-                           <input type="number" value="${step.time}" data-field="time" class="w-16 text-right p-1 rounded border bg-white mr-2"/>
-                           <span>min</span>
-                           <button class="delete-step-btn text-gray-400 hover:text-red-500 ml-2 p-1"><i class="fas fa-times"></i></button>
+                const objectives = (unit.objectives || []).sort((a,b) => a.order - b.order);
+                const objectivesContainer = document.createElement('div');
+                objectivesContainer.className = 'objective-list space-y-4 mt-4';
+                objectivesContainer.dataset.unitId = unit.id;
+
+                objectives.forEach(obj => {
+                    let totalObjectiveTime = 0;
+                    const stepsContainer = document.createElement('div');
+                    stepsContainer.className = 'steps-container mt-2 space-y-2';
+                    stepsContainer.dataset.objectiveId = obj.id;
+
+                    (obj.steps || []).sort((a,b) => a.order - b.order).forEach(step => {
+                        totalObjectiveTime += Number(step.time) || 0;
+                        const stepEl = document.createElement('div');
+                        stepEl.className = 'step flex justify-between items-center p-2 bg-white rounded-md shadow-sm';
+                        stepEl.dataset.stepId = step.id;
+                        stepEl.dataset.id = `step-${step.id}`;
+                        stepEl.innerHTML = `
+                            <i class="fas fa-grip-vertical drag-handle text-gray-400 mr-3"></i>
+                            <p contenteditable="true" data-field="title" class="flex-grow">${step.title}</p>
+                            <div class="flex items-center ml-4">
+                               <input type="number" value="${step.time}" data-field="time" class="w-16 text-right p-1 rounded border bg-white mr-2"/>
+                               <span>min</span>
+                               <button class="delete-step-btn text-gray-400 hover:text-red-500 ml-2 p-1"><i class="fas fa-times"></i></button>
+                            </div>
+                        `;
+                        stepsContainer.appendChild(stepEl);
+                    });
+                    totalUnitTime += totalObjectiveTime;
+                    
+                    const objectiveEl = document.createElement('div');
+                    objectiveEl.className = 'objective bg-gray-100 rounded-lg p-4';
+                    objectiveEl.dataset.objectiveId = obj.id;
+                    objectiveEl.dataset.id = `objective-${obj.id}`;
+                    objectiveEl.innerHTML = `
+                        <div class="flex justify-between items-center font-semibold">
+                            <div class="flex items-center flex-grow">
+                                 <i class="fas fa-grip-vertical drag-handle text-gray-500 mr-4"></i>
+                                 <h4 contenteditable="true" data-field="title" class="text-lg w-full">${obj.title}</h4>
+                            </div>
+                            <span class="bg-green-200 text-green-800 text-sm font-medium px-3 py-1 rounded-full whitespace-nowrap ml-4">${totalObjectiveTime} min</span>
                         </div>
+                        <div class="steps-wrapper pl-6"></div>
+                        <button class="add-step-btn mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add Teaching Step</button>
                     `;
-                    stepsContainer.appendChild(stepEl);
+                    objectiveEl.querySelector('.steps-wrapper').appendChild(stepsContainer);
+                    objectivesContainer.appendChild(objectiveEl);
                 });
-                totalModuleTime += totalObjectiveTime;
-                
-                const objectiveEl = document.createElement('div');
-                objectiveEl.className = 'objective bg-gray-100 rounded-lg p-4';
-                objectiveEl.dataset.objectiveId = obj.id;
-                objectiveEl.id = `objective-${obj.id}`;
-                objectiveEl.innerHTML = `
+                totalModuleTime += totalUnitTime;
+
+                unitEl.innerHTML = `
                     <div class="flex justify-between items-center font-semibold">
                         <div class="flex items-center flex-grow">
-                             <i class="fas fa-grip-vertical drag-handle text-gray-500 mr-4"></i>
-                             <h4 contenteditable="true" data-field="title" class="text-lg w-full">${obj.title}</h4>
+                            <i class="fas fa-grip-vertical drag-handle text-gray-600 mr-4"></i>
+                            <h3 contenteditable="true" data-field="title" class="text-lg w-full text-blue-800">${unit.title}</h3>
                         </div>
-                        <span class="bg-green-200 text-green-800 text-sm font-medium px-3 py-1 rounded-full whitespace-nowrap ml-4">${totalObjectiveTime} min</span>
+                        <div class="flex items-center space-x-3">
+                            <span class="bg-yellow-200 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full whitespace-nowrap ml-4">${totalUnitTime} min</span>
+                            <button class="delete-unit-btn text-gray-500 hover:text-red-600 p-1"><i class="fas fa-times-circle"></i></button>
+                        </div>
                     </div>
-                    <div class="steps-wrapper pl-6"></div>
-                    <button class="add-step-btn mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add Teaching Step</button>
                 `;
-                objectiveEl.querySelector('.steps-wrapper').appendChild(stepsContainer);
-                objectivesContainer.appendChild(objectiveEl);
+                unitEl.appendChild(objectivesContainer);
+                unitEl.insertAdjacentHTML('beforeend', `<button class="add-objective-btn mt-4 text-sm text-green-600 hover:text-green-800 font-medium">+ Add Objective</button>`);
+                unitsContainer.appendChild(unitEl);
             });
 
             el.innerHTML = `
                 <div class="flex justify-between items-center mb-4">
-                    <h3 contenteditable="true" data-field="title" class="text-xl font-bold text-gray-800 w-full">${module.title}</h3>
+                    <h2 contenteditable="true" data-field="title" class="text-2xl font-bold text-gray-800 w-full">${module.title}</h2>
                     <div class="flex items-center space-x-4 ml-4">
-                       <span class="bg-blue-200 text-blue-800 text-lg font-bold px-4 py-1.5 rounded-full whitespace-nowrap">${totalModuleTime} min</span>
+                       <span class="bg-indigo-200 text-indigo-800 text-lg font-bold px-4 py-1.5 rounded-full whitespace-nowrap">${totalModuleTime} min</span>
                        <button class="delete-module-btn text-gray-500 hover:text-red-600 text-xl p-1"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </div>
             `;
-            el.appendChild(objectivesContainer);
-            el.insertAdjacentHTML('beforeend', `<button class="add-objective-btn mt-6 bg-blue-100 text-blue-700 px-4 py-2 rounded-md hover:bg-blue-200 w-full font-semibold"><i class="fas fa-plus mr-2"></i>Add Objective</button>`);
+            el.appendChild(unitsContainer);
+            el.insertAdjacentHTML('beforeend', `<button class="add-unit-btn mt-6 bg-blue-100 text-blue-700 px-4 py-2 rounded-md hover:bg-blue-200 w-full font-semibold"><i class="fas fa-plus mr-2"></i>Add Unit</button>`);
             return el;
         }
 
-        async function handleUpdate(moduleId, objectiveId, stepId, field, value) {
+        async function handleUpdate(moduleId, unitId, objectiveId, stepId, field, value) {
             const moduleRef = doc(db, 'course', moduleId);
             try {
                 await runTransaction(db, async (transaction) => {
@@ -265,22 +295,33 @@
                     if (!moduleDoc.exists()) throw "Module not found!";
                     
                     const data = moduleDoc.data();
+                    const newUnits = JSON.parse(JSON.stringify(data.units || []));
                     
-                    if (!objectiveId && !stepId) { // Updating module title
+                    if (!unitId) {
                         transaction.update(moduleRef, { title: value });
                     } else {
-                        const newObjectives = JSON.parse(JSON.stringify(data.objectives || []));
-                        const objIndex = newObjectives.findIndex(o => o.id === objectiveId);
-                        if (objIndex ===-1) return;
+                        const unitIndex = newUnits.findIndex(u => u.id === unitId);
+                        if (unitIndex === -1) return;
 
-                        if (!stepId) { // Updating objective title
-                             newObjectives[objIndex].title = value;
-                        } else { // Updating step
-                            const stepIndex = newObjectives[objIndex].steps.findIndex(s => s.id === stepId);
-                            if (stepIndex === -1) return;
-                            newObjectives[objIndex].steps[stepIndex][field] = field === 'time' ? Number(value) : value;
+                        if (!objectiveId) {
+                            newUnits[unitIndex].title = value;
+                        } else {
+                            const newObjectives = newUnits[unitIndex].objectives || [];
+                            const objIndex = newObjectives.findIndex(o => o.id === objectiveId);
+                            if (objIndex === -1) return;
+
+                            if (!stepId) {
+                                newObjectives[objIndex].title = value;
+                            } else {
+                                const newSteps = newObjectives[objIndex].steps || [];
+                                const stepIndex = newSteps.findIndex(s => s.id === stepId);
+                                if (stepIndex === -1) return;
+                                newSteps[stepIndex][field] = field === 'time' ? Number(value) : value;
+                                newObjectives[objIndex].steps = newSteps;
+                            }
+                            newUnits[unitIndex].objectives = newObjectives;
                         }
-                        transaction.update(moduleRef, { objectives: newObjectives });
+                        transaction.update(moduleRef, { units: newUnits });
                     }
                 });
             } catch (error) {
@@ -291,25 +332,28 @@
         modulesContainer.addEventListener('focusout', e => {
             if (e.target.hasAttribute('contenteditable') || e.target.type === 'number') {
                 const moduleId = e.target.closest('.module')?.dataset.moduleId;
+                const unitId = e.target.closest('.unit')?.dataset.unitId;
                 const objectiveId = e.target.closest('.objective')?.dataset.objectiveId;
                 const stepId = e.target.closest('.step')?.dataset.stepId;
                 const field = e.target.dataset.field;
                 const value = e.target.matches('[contenteditable]') ? e.target.textContent : e.target.value;
                 
-                // Find original value to see if it changed
                 const moduleData = localCourseData.find(m => m.id === moduleId);
                 if(!moduleData) return;
                 let originalValue;
-                if(objectiveId && stepId) {
-                    originalValue = moduleData.objectives.find(o=>o.id === objectiveId)?.steps.find(s=>s.id === stepId)?.[field];
-                } else if (objectiveId) {
-                    originalValue = moduleData.objectives.find(o=>o.id === objectiveId)?.[field];
+
+                if(unitId && objectiveId && stepId) {
+                    originalValue = moduleData.units?.find(u=>u.id === unitId)?.objectives?.find(o=>o.id === objectiveId)?.steps?.find(s=>s.id === stepId)?.[field];
+                } else if (unitId && objectiveId) {
+                    originalValue = moduleData.units?.find(u=>u.id === unitId)?.objectives?.find(o=>o.id === objectiveId)?.[field];
+                } else if (unitId) {
+                    originalValue = moduleData.units?.find(u=>u.id === unitId)?.[field];
                 } else {
                     originalValue = moduleData[field];
                 }
 
                 if (String(originalValue) !== String(value)) {
-                     handleUpdate(moduleId, objectiveId, stepId, field, value);
+                     handleUpdate(moduleId, unitId, objectiveId, stepId, field, value);
                 }
             }
         });
@@ -319,14 +363,14 @@
             if (!moduleId) return;
             const moduleRef = doc(db, 'course', moduleId);
 
-            // Add Objective
-            if (e.target.matches('.add-objective-btn, .add-objective-btn *')) {
+            // Add Unit
+            if (e.target.matches('.add-unit-btn, .add-unit-btn *')) {
                 const moduleDoc = await getDoc(moduleRef);
-                const existingObjectives = moduleDoc.data().objectives || [];
-                const newObjective = { id: Date.now().toString(), title: "New Objective", order: existingObjectives.length, steps: [] };
-                await updateDoc(moduleRef, { objectives: [...existingObjectives, newObjective] });
+                const existingUnits = moduleDoc.data().units || [];
+                const newUnit = { id: Date.now().toString(), title: "New Unit", order: existingUnits.length, objectives: [] };
+                await updateDoc(moduleRef, { units: [...existingUnits, newUnit] });
             }
-
+            
             // Delete Module
             if(e.target.closest('.delete-module-btn')) {
                 if(confirm('Are you sure you want to delete this entire module?')) {
@@ -334,20 +378,52 @@
                 }
             }
 
+            const unitId = e.target.closest('.unit')?.dataset.unitId;
+            if(!unitId) return;
+
+            // Delete Unit
+            if(e.target.closest('.delete-unit-btn')) {
+                 await runTransaction(db, async (transaction) => {
+                     const moduleDoc = await transaction.get(moduleRef);
+                     if (!moduleDoc.exists()) return;
+                     const newUnits = (moduleDoc.data().units || []).filter(u => u.id !== unitId);
+                     transaction.update(moduleRef, { units: newUnits });
+                 });
+            }
+            
             const objectiveId = e.target.closest('.objective')?.dataset.objectiveId;
+
+            // Add Objective to Unit
+            if(e.target.matches('.add-objective-btn, .add-objective-btn *')) {
+                await runTransaction(db, async (transaction) => {
+                    const moduleDoc = await transaction.get(moduleRef);
+                    if (!moduleDoc.exists()) return;
+                    const newUnits = JSON.parse(JSON.stringify(moduleDoc.data().units || []));
+                    const unitIndex = newUnits.findIndex(u => u.id === unitId);
+                    if (unitIndex === -1) return;
+                    const existingObjectives = newUnits[unitIndex].objectives || [];
+                    const newObjective = { id: Date.now().toString(), title: "New Objective", order: existingObjectives.length, steps: [] };
+                    newUnits[unitIndex].objectives = [...existingObjectives, newObjective];
+                    transaction.update(moduleRef, { units: newUnits });
+                });
+            }
+
             if(!objectiveId) return;
 
-            // Add Step
+            // Add Step to Objective
             if(e.target.matches('.add-step-btn, .add-step-btn *')) {
                  await runTransaction(db, async (transaction) => {
                      const moduleDoc = await transaction.get(moduleRef);
-                     if (!moduleDoc.exists()) throw "Module not found!";
-                     const newObjectives = JSON.parse(JSON.stringify(moduleDoc.data().objectives));
-                     const objIndex = newObjectives.findIndex(o => o.id === objectiveId);
+                     if (!moduleDoc.exists()) return;
+                     const newUnits = JSON.parse(JSON.stringify(moduleDoc.data().units || []));
+                     const unitIndex = newUnits.findIndex(u => u.id === unitId);
+                     if (unitIndex === -1) return;
+                     const objIndex = newUnits[unitIndex].objectives.findIndex(o => o.id === objectiveId);
                      if (objIndex === -1) return;
-                     const newStep = { id: Date.now().toString(), title: "New Teaching Step", time: 10, order: newObjectives[objIndex].steps.length };
-                     newObjectives[objIndex].steps.push(newStep);
-                     transaction.update(moduleRef, { objectives: newObjectives });
+                     const newSteps = newUnits[unitIndex].objectives[objIndex].steps || [];
+                     const newStep = { id: Date.now().toString(), title: "New Teaching Step", time: 10, order: newSteps.length };
+                     newUnits[unitIndex].objectives[objIndex].steps = [...newSteps, newStep];
+                     transaction.update(moduleRef, { units: newUnits });
                  });
             }
             
@@ -356,71 +432,88 @@
                 const stepId = e.target.closest('.step').dataset.stepId;
                  await runTransaction(db, async (transaction) => {
                      const moduleDoc = await transaction.get(moduleRef);
-                     if (!moduleDoc.exists()) throw "Module not found!";
-                     const newObjectives = JSON.parse(JSON.stringify(moduleDoc.data().objectives));
-                     const objIndex = newObjectives.findIndex(o => o.id === objectiveId);
+                     if (!moduleDoc.exists()) return;
+                     const newUnits = JSON.parse(JSON.stringify(moduleDoc.data().units || []));
+                     const unitIndex = newUnits.findIndex(u => u.id === unitId);
+                     if (unitIndex === -1) return;
+                     const objIndex = newUnits[unitIndex].objectives.findIndex(o => o.id === objectiveId);
                      if (objIndex === -1) return;
-                     newObjectives[objIndex].steps = newObjectives[objIndex].steps.filter(s => s.id !== stepId);
-                     transaction.update(moduleRef, { objectives: newObjectives });
+                     newUnits[unitIndex].objectives[objIndex].steps = newUnits[unitIndex].objectives[objIndex].steps.filter(s => s.id !== stepId);
+                     transaction.update(moduleRef, { units: newUnits });
                  });
             }
         });
         
         document.getElementById('add-module-btn').addEventListener('click', async () => {
-             const moduleCount = modulesContainer.children.length;
              await addDoc(collection(db, 'course'), {
                 title: "New Module",
-                order: moduleCount,
-                objectives: []
+                order: localCourseData.length,
+                units: []
             });
         });
         
         function initializeSortable() {
-            document.querySelectorAll('.objective-list').forEach(list => {
+            // Sort Modules
+            new Sortable(modulesContainer, {
+                group: 'modules', animation: 150,
+                onEnd: async (evt) => { /* Logic for module reordering can be added here if needed */ }
+            });
+
+            // Sort Units
+            document.querySelectorAll('.unit-list').forEach(list => {
                 new Sortable(list, {
-                    group: `objectives-${list.dataset.moduleId}`,
-                    animation: 150,
-                    handle: '.drag-handle',
-                    ghostClass: 'ghost',
-                    chosenClass: 'sortable-chosen',
+                    group: `units-${list.dataset.moduleId}`, animation: 150, handle: '.drag-handle', ghostClass: 'ghost',
                     onEnd: async (evt) => {
                          const moduleId = evt.from.dataset.moduleId;
                          const moduleRef = doc(db, 'course', moduleId);
-                         const newOrderIds = Array.from(evt.from.children).map(el => el.dataset.objectiveId);
-                         
+                         const newOrderIds = Array.from(evt.from.children).map(el => el.dataset.unitId);
                          await runTransaction(db, async (transaction) => {
                              const moduleDoc = await transaction.get(moduleRef);
-                             const newObjectives = moduleDoc.data().objectives;
-                             newObjectives.forEach(obj => {
-                                 obj.order = newOrderIds.indexOf(obj.id);
-                             });
-                             transaction.update(moduleRef, { objectives: newObjectives });
+                             const newUnits = moduleDoc.data().units;
+                             newUnits.forEach(unit => { unit.order = newOrderIds.indexOf(unit.id); });
+                             transaction.update(moduleRef, { units: newUnits });
                          });
                     }
                 });
             });
 
+            // Sort Objectives
+            document.querySelectorAll('.objective-list').forEach(list => {
+                new Sortable(list, {
+                    group: `objectives-${list.dataset.unitId}`, animation: 150, handle: '.drag-handle', ghostClass: 'ghost',
+                    onEnd: async (evt) => {
+                         const moduleId = evt.from.closest('.module').dataset.moduleId;
+                         const unitId = evt.from.dataset.unitId;
+                         const moduleRef = doc(db, 'course', moduleId);
+                         const newOrderIds = Array.from(evt.from.children).map(el => el.dataset.objectiveId);
+                         await runTransaction(db, async (transaction) => {
+                             const moduleDoc = await transaction.get(moduleRef);
+                             const newUnits = moduleDoc.data().units;
+                             const unitIndex = newUnits.findIndex(u => u.id === unitId);
+                             newUnits[unitIndex].objectives.forEach(obj => { obj.order = newOrderIds.indexOf(obj.id); });
+                             transaction.update(moduleRef, { units: newUnits });
+                         });
+                    }
+                });
+            });
+
+            // Sort Steps
             document.querySelectorAll('.steps-container').forEach(list => {
                 new Sortable(list, {
-                    group: `steps-${list.dataset.objectiveId}`,
-                    animation: 150,
-                    handle: '.drag-handle',
-                    ghostClass: 'ghost',
-                    chosenClass: 'sortable-chosen',
+                    group: `steps-${list.dataset.objectiveId}`, animation: 150, handle: '.drag-handle', ghostClass: 'ghost',
                     onEnd: async (evt) => {
                         const moduleId = evt.from.closest('.module').dataset.moduleId;
+                        const unitId = evt.from.closest('.unit').dataset.unitId;
                         const objectiveId = evt.from.dataset.objectiveId;
                         const moduleRef = doc(db, 'course', moduleId);
                         const newOrderIds = Array.from(evt.from.children).map(el => el.dataset.stepId);
-
                         await runTransaction(db, async (transaction) => {
                              const moduleDoc = await transaction.get(moduleRef);
-                             const newObjectives = moduleDoc.data().objectives;
-                             const objIndex = newObjectives.findIndex(o => o.id === objectiveId);
-                             newObjectives[objIndex].steps.forEach(step => {
-                                 step.order = newOrderIds.indexOf(step.id);
-                             });
-                             transaction.update(moduleRef, { objectives: newObjectives });
+                             const newUnits = moduleDoc.data().units;
+                             const unitIndex = newUnits.findIndex(u => u.id === unitId);
+                             const objIndex = newUnits[unitIndex].objectives.findIndex(o => o.id === objectiveId);
+                             newUnits[unitIndex].objectives[objIndex].steps.forEach(step => { step.order = newOrderIds.indexOf(step.id); });
+                             transaction.update(moduleRef, { units: newUnits });
                          });
                     }
                 });
@@ -431,25 +524,24 @@
         const ctx = canvas.getContext('2d');
         function drawAllWorkflowLines() {
             const containerRect = modulesContainer.getBoundingClientRect();
-            const scrollY = window.scrollY;
             canvas.width = modulesContainer.offsetWidth;
             canvas.height = modulesContainer.offsetHeight;
             canvas.style.top = `${modulesContainer.offsetTop}px`;
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            document.querySelectorAll('.module').forEach(moduleEl => {
-                const objectives = Array.from(moduleEl.querySelectorAll('.objective'));
+            document.querySelectorAll('.unit').forEach(unitEl => {
+                const objectives = Array.from(unitEl.querySelectorAll('.objective'));
                 for (let i = 0; i < objectives.length - 1; i++) {
                     const startEl = objectives[i];
                     const endEl = objectives[i+1];
                     const startRect = startEl.getBoundingClientRect();
                     const endRect = endEl.getBoundingClientRect();
                     
-                    const startX = startRect.left + startRect.width / 2 - modulesContainer.getBoundingClientRect().left;
-                    const startY = startRect.bottom - modulesContainer.getBoundingClientRect().top;
-                    const endX = endRect.left + endRect.width / 2 - modulesContainer.getBoundingClientRect().left;
-                    const endY = endRect.top - modulesContainer.getBoundingClientRect().top;
+                    const startX = startRect.left + startRect.width / 2 - containerRect.left;
+                    const startY = startRect.bottom - containerRect.top;
+                    const endX = endRect.left + endRect.width / 2 - containerRect.left;
+                    const endY = endRect.top - containerRect.top;
 
                     ctx.beginPath();
                     ctx.moveTo(startX, startY);
@@ -459,12 +551,13 @@
                     ctx.setLineDash([5, 5]);
                     ctx.stroke();
 
-                    const angle = Math.atan2((endY-40) - endY, endX - endX);
+                    // Arrowhead
+                    const angle = Math.atan2(endY - (endY - 40), endX - endX);
                     ctx.save();
                     ctx.translate(endX, endY);
                     ctx.rotate(angle + Math.PI / 2);
                     ctx.beginPath();
-                    ctx.moveTo(0, -2); ctx.lineTo(-6, -14); ctx.lineTo(6, -14); ctx.closePath();
+                    ctx.moveTo(0, 0); ctx.lineTo(-6, -12); ctx.lineTo(6, -12); ctx.closePath();
                     ctx.fillStyle = '#9ca3af';
                     ctx.fill();
                     ctx.restore();
